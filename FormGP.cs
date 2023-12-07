@@ -18,12 +18,19 @@ namespace GraphicPrimitives
 
         public FormGP()
         {
-            
+            InitializeComponent();
+            circle = new Circle(100, 100, 50, Brushes.Red, Pens.Black);
+            rectangle = new Rectangle(250, 200, Brushes.Blue, Pens.Black);
+            triangle = new Triangle(100, 30, Brushes.Green, Pens.Black);
+
+            this.Paint += FormGP_Paint;
         }
 
         private void FormGP_Paint(object sender, PaintEventArgs e)
         {
-            
+            circle.Draw(e.Graphics);
+            rectangle.Draw(e.Graphics);
+            triangle.Draw(e.Graphics);
         }
     }
 
