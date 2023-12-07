@@ -13,6 +13,8 @@ namespace GraphicPrimitives
     public partial class FormGP : Form
     {
         private Circle circle;
+        private Rectangle rectangle;
+        //private Triangle triangle;
 
         public FormGP()
         {
@@ -51,6 +53,23 @@ namespace GraphicPrimitives
         {
             graphics.FillEllipse(FillColor, 100, 100, Radius * 2, Radius * 2);
             graphics.DrawEllipse(BorderColor, 100, 100, Radius * 2, Radius * 2);
+        }
+    }
+
+    class Rectangle : Shape
+    {
+        public Rectangle(int width, int height, Brush fillColor, Pen borderColor)
+        {
+            Width = width;
+            Height = height;
+            FillColor = fillColor;
+            BorderColor = borderColor;
+        }
+
+        public override void Draw(Graphics graphics)
+        {
+            graphics.FillRectangle(FillColor, 250, 200, Width, Height);
+            graphics.DrawRectangle(BorderColor, 250, 200, Width, Height);
         }
     }
 }
