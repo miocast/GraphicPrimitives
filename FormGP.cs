@@ -14,16 +14,16 @@ namespace GraphicPrimitives
     {
         private Circle circle;
         private Rectangle rectangle;
-        //private Triangle triangle;
+        private Triangle triangle;
 
         public FormGP()
         {
-            InitializeComponent();
+            
         }
 
         private void FormGP_Paint(object sender, PaintEventArgs e)
         {
-
+            
         }
     }
 
@@ -70,6 +70,38 @@ namespace GraphicPrimitives
         {
             graphics.FillRectangle(FillColor, 250, 200, Width, Height);
             graphics.DrawRectangle(BorderColor, 250, 200, Width, Height);
+        }
+    }
+
+    class Triangle : Shape
+    {
+        private int SideLength { get; set; }
+        private int Angle { get; set; }
+        public Triangle(int sideLength, int angle, Brush fillColor, Pen borderColor)
+        {
+            SideLength = sideLength;
+            Angle = angle;
+            FillColor = fillColor;
+            BorderColor = borderColor;
+        }
+
+        public override void Draw(Graphics graphics)
+        {
+            Point[] points = CalculateTrianglePoints();
+            graphics.FillPolygon(FillColor, points);
+            graphics.DrawPolygon(BorderColor, points);
+        }
+
+        private Point[] CalculateTrianglePoints()
+        {
+            Point[] points = new Point[3];
+            int halfSideLength = SideLength / 2;
+
+            points[0] = new Point(0, 0);
+            points[1] = new Point(SideLength, 0);
+            points[2] = new Point(halfSideLength, (int)(Math.Sqrt(3) * halfSideLength));
+
+            return points;
         }
     }
 }
