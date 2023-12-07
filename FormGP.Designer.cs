@@ -39,7 +39,6 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "FormGP";
             this.Text = "Графические примитивы";
-            this.Paint += new System.Windows.Forms.PaintEventHandler(this.FormGP_Paint);
             this.ResumeLayout(false);
 
         }
