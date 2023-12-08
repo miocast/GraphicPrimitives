@@ -33,6 +33,7 @@ namespace GraphicPrimitives
 
         //штучка на попозже
         private bool isResizing;
+        private bool isMoving;
 
 
 
@@ -59,14 +60,24 @@ namespace GraphicPrimitives
 
         private void DrawingCanvas_MouseDown(object sender, MouseEventArgs e)
         {
+           
+
             foreach (Shape shape in shapes)
             {
                 if (shape.ContainsPoint(e.Location))
                 {
                     selectedShape = shape;
-                    isResizing = true;
                     Capture = true;
                     lastMouseLocation = e.Location;
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        isResizing = true;
+                    }
+                    // Добавляем проверку для определения, начинается ли перемещение
+                    if (e.Button == MouseButtons.Right)
+                    {
+                        isMoving = true;
+                    }
                     return; // Выходим, чтобы не проверять другие фигуры после того, как одна была найдена
                 }
             }
@@ -94,9 +105,16 @@ namespace GraphicPrimitives
                         rectangle.Resize(newWidth, newHeight);
                     }
 
+                    else if (selectedShape is Triangle triangle)
+                    {
+                        int newSideLength = Math.Max(triangle.SideLength + deltaX, 0);
+                        triangle.Resize(newSideLength);
+                    }
+
+
                     Invalidate(); // Перерисовываем контрол после перемещения
                 }
-                else
+                else if (isMoving)
                 {
                     // Перемещение
                     selectedShape.Move(deltaX, deltaY);
@@ -115,6 +133,7 @@ namespace GraphicPrimitives
             Capture = false;
             selectedShape = null;
             isResizing = false;
+            isMoving = false;
         }
 
 
@@ -227,7 +246,7 @@ namespace GraphicPrimitives
     class Triangle : Shape
     {
         private Point[] Points { get; set; }
-        private int SideLength { get; set; }
+        public int SideLength { get; set; }
 
         public Triangle(int x, int y, int sideLength, Brush fillColor, Pen borderColor)
         {
@@ -268,6 +287,13 @@ namespace GraphicPrimitives
             {
                 Points[i] = new Point(Points[i].X + deltaX, Points[i].Y + deltaY);
             }
+        }
+
+        public void Resize(int newSideLength)
+        {
+            SideLength = newSideLength;
+            CalculateTrianglePoints(Points[0].X, Points[0].Y); // Пересчитываем координаты вершин
+
         }
     }
 }
