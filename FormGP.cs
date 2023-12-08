@@ -1,11 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing.Drawing2D;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace GraphicPrimitives
@@ -22,22 +19,124 @@ namespace GraphicPrimitives
             drawingCanvas.Dock = DockStyle.Fill;
             Controls.Add(drawingCanvas);
         }
-
     }
 
     public class DrawingCanvas : Control
     {
+        private List<Shape> shapes;
+        private Shape selectedShape;
+        private Point lastMouseLocation;
 
-        private Circle circle;
-        private Rectangle rectangle;
-        private Triangle triangle;
+        //private Circle circle;
+        //private Rectangle rectangle;
+        //private Triangle triangle;
+
+        //штучка на попозже
+        private bool isResizing;
+        private bool isMoving;
+
+
 
         public DrawingCanvas()
         {
-            circle = new Circle(100, 100, 50, Brushes.Red, Pens.Black);
-            rectangle = new Rectangle(250, 200, Brushes.Blue, Pens.Black);
-            triangle = new Triangle(100, 30, Brushes.Green, Pens.Black);
+            shapes = new List<Shape>
+            {
+                new Circle(10, 10, 100, 100, 50, Brushes.Red, Pens.Black),
+                new Rectangle(60, 60, 60, 80, Brushes.Blue, Pens.Black),
+                new Triangle(200, 200, 100, Brushes.Green, Pens.Black)
+            };
+
+
+            MouseDown += DrawingCanvas_MouseDown;
+            MouseMove += DrawingCanvas_MouseMove;
+            MouseUp += DrawingCanvas_MouseUp;
         }
+
+        private void Shape_OnShapeClicked(object sender, EventArgs e)
+        {
+            selectedShape = (Shape)sender;
+            lastMouseLocation = Cursor.Position;
+        }
+
+        private void DrawingCanvas_MouseDown(object sender, MouseEventArgs e)
+        {
+           
+
+            foreach (Shape shape in shapes)
+            {
+                if (shape.ContainsPoint(e.Location))
+                {
+                    selectedShape = shape;
+                    Capture = true;
+                    lastMouseLocation = e.Location;
+                    if (e.Button == MouseButtons.Left)
+                    {
+                        isResizing = true;
+                    }
+                    // Добавляем проверку для определения, начинается ли перемещение
+                    if (e.Button == MouseButtons.Right)
+                    {
+                        isMoving = true;
+                    }
+                    return; // Выходим, чтобы не проверять другие фигуры после того, как одна была найдена
+                }
+            }
+        }
+
+        private void DrawingCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (Capture && selectedShape != null)
+            {
+                int deltaX = e.X - lastMouseLocation.X;
+                int deltaY = e.Y - lastMouseLocation.Y;
+
+                if (isResizing)
+                {
+                    if (selectedShape is Circle circle)
+                    {
+                        int newRadius = Math.Max(circle.Radius + deltaX, 0);
+                        circle.Resize(newRadius);
+                    }
+
+                    else if (selectedShape is Rectangle rectangle)
+                    {
+                        int newWidth = Math.Max(rectangle.Width + deltaX, 0);
+                        int newHeight = Math.Max(rectangle.Height + deltaY, 0);
+                        rectangle.Resize(newWidth, newHeight);
+                    }
+
+                    else if (selectedShape is Triangle triangle)
+                    {
+                        int newSideLength = Math.Max(triangle.SideLength + deltaX, 0);
+                        triangle.Resize(newSideLength);
+                    }
+
+
+                    Invalidate(); // Перерисовываем контрол после перемещения
+                }
+                else if (isMoving)
+                {
+                    // Перемещение
+                    selectedShape.Move(deltaX, deltaY);
+                    Invalidate();
+                }
+
+                lastMouseLocation = e.Location;
+
+            }
+            
+        }
+
+        private void DrawingCanvas_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Освобождаем захват мыши
+            Capture = false;
+            selectedShape = null;
+            isResizing = false;
+            isMoving = false;
+        }
+
+
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -45,45 +144,76 @@ namespace GraphicPrimitives
 
             e.Graphics.Clear(Color.White);
 
-            circle.Draw(e.Graphics);
-            rectangle.Draw(e.Graphics);
-            triangle.Draw(e.Graphics);
+            foreach (Shape shape in shapes)
+            {
+                shape.Draw(e.Graphics);
+            }
         }
     }
+
+
+
 
     abstract class Shape
     {
         protected Brush FillColor { get; set; }
         protected Pen BorderColor { get; set; }
-        protected int Width { get; set; }
-        protected int Height { get; set; }
+
+        //вот это я зачем сделала?? 
+        public int Width { get; set; }
+        public int Height { get; set; }
 
         public abstract void Draw(Graphics graphics);
+        public abstract bool ContainsPoint(Point point);
+
+        public abstract void Move(int deltaX, int deltaY);
     }
 
     class Circle : Shape
     {
+        public int Radius { get; set; }
+        private Point Location { get; set; }
 
-        private int Radius { get; set; }
-        public Circle(int width, int height, int radius, Brush fillColor, Pen borderColor)
+        public Circle(int x, int y, int width, int height, int radius, Brush fillColor, Pen borderColor)
         {
+            Location = new Point(x, y);
             Width = width;
             Height = height;
             Radius = radius;
             FillColor = fillColor;
             BorderColor = borderColor;
         }
+
         public override void Draw(Graphics graphics)
         {
-            graphics.FillEllipse(FillColor, 100, 100, Radius * 2, Radius * 2);
-            graphics.DrawEllipse(BorderColor, 100, 100, Radius * 2, Radius * 2);
+            graphics.FillEllipse(FillColor, Location.X - Radius, Location.Y - Radius, Radius * 2, Radius * 2);
+            graphics.DrawEllipse(BorderColor, Location.X - Radius, Location.Y - Radius, Radius * 2, Radius * 2);
+
+        }
+
+        public override bool ContainsPoint(Point point)
+        {
+            int distanceFromCenter = (int)Math.Sqrt(Math.Pow(point.X - Location.X, 2) + Math.Pow(point.Y - Location.Y, 2));
+            return distanceFromCenter <= Radius;
+        }
+
+        public override void Move(int deltaX, int deltaY)
+        {
+            Location = new Point(Location.X + deltaX, Location.Y + deltaY);
+        }
+
+        public void Resize(int newRadius)
+        {
+            Radius = newRadius;
         }
     }
 
     class Rectangle : Shape
     {
-        public Rectangle(int width, int height, Brush fillColor, Pen borderColor)
+        private Point Location { get; set; }
+        public Rectangle(int x, int y, int width, int height, Brush fillColor, Pen borderColor)
         {
+            Location = new Point(x, y);
             Width = width;
             Height = height;
             FillColor = fillColor;
@@ -92,40 +222,78 @@ namespace GraphicPrimitives
 
         public override void Draw(Graphics graphics)
         {
-            graphics.FillRectangle(FillColor, 250, 200, Width, Height);
-            graphics.DrawRectangle(BorderColor, 250, 200, Width, Height);
+            graphics.FillRectangle(FillColor, Location.X, Location.Y, Width, Height);
+            graphics.DrawRectangle(BorderColor, Location.X, Location.Y, Width, Height);
         }
+
+        public override bool ContainsPoint(Point point)
+        {
+            return point.X >= Location.X && point.X <= Location.X + Width && point.Y >= Location.Y && point.Y <= Location.Y + Height;
+        }
+
+        public override void Move(int deltaX, int deltaY)
+        {
+            Location = new Point(Location.X + deltaX, Location.Y + deltaY);
+        }
+        public void Resize(int newWidth, int newHeight)
+        {
+            Width = newWidth;
+            Height = newHeight;
+        }
+
     }
 
     class Triangle : Shape
     {
-        private int SideLength { get; set; }
-        private int Angle { get; set; }
-        public Triangle(int sideLength, int angle, Brush fillColor, Pen borderColor)
+        private Point[] Points { get; set; }
+        public int SideLength { get; set; }
+
+        public Triangle(int x, int y, int sideLength, Brush fillColor, Pen borderColor)
         {
             SideLength = sideLength;
-            Angle = angle;
             FillColor = fillColor;
             BorderColor = borderColor;
+            CalculateTrianglePoints(x, y);
+        }
+
+        private void CalculateTrianglePoints(int x, int y)
+        {
+            Points = new Point[3];
+            int halfSideLength = SideLength / 2;
+
+            Points[0] = new Point(x, y);
+            Points[1] = new Point(x + SideLength, y);
+            Points[2] = new Point(x + halfSideLength, y + (int)(Math.Sqrt(3) * halfSideLength));
         }
 
         public override void Draw(Graphics graphics)
         {
-            Point[] points = CalculateTrianglePoints();
-            graphics.FillPolygon(FillColor, points);
-            graphics.DrawPolygon(BorderColor, points);
+            graphics.FillPolygon(FillColor, Points);
+            graphics.DrawPolygon(BorderColor, Points);
         }
 
-        private Point[] CalculateTrianglePoints()
+        public override bool ContainsPoint(Point point)
         {
-            Point[] points = new Point[3];
-            int halfSideLength = SideLength / 2;
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                path.AddPolygon(Points);
+                return path.IsVisible(point);
+            }
+        }
 
-            points[0] = new Point(0, 0);
-            points[1] = new Point(SideLength, 0);
-            points[2] = new Point(halfSideLength, (int)(Math.Sqrt(3) * halfSideLength));
+        public override void Move(int deltaX, int deltaY)
+        {
+            for (int i = 0; i < Points.Length; i++)
+            {
+                Points[i] = new Point(Points[i].X + deltaX, Points[i].Y + deltaY);
+            }
+        }
 
-            return points;
+        public void Resize(int newSideLength)
+        {
+            SideLength = newSideLength;
+            CalculateTrianglePoints(Points[0].X, Points[0].Y); // Пересчитываем координаты вершин
+
         }
     }
 }
