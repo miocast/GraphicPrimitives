@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Drawing.Drawing2D;
 using System.Windows.Forms;
 
 namespace GraphicPrimitives
@@ -22,7 +17,6 @@ namespace GraphicPrimitives
             drawingCanvas.Dock = DockStyle.Fill;
             Controls.Add(drawingCanvas);
         }
-
     }
 
     public class DrawingCanvas : Control
@@ -31,12 +25,14 @@ namespace GraphicPrimitives
         private Circle circle;
         private Rectangle rectangle;
         private Triangle triangle;
+ 
 
         public DrawingCanvas()
         {
             circle = new Circle(100, 100, 50, Brushes.Red, Pens.Black);
-            rectangle = new Rectangle(250, 200, Brushes.Blue, Pens.Black);
-            triangle = new Triangle(100, 30, Brushes.Green, Pens.Black);
+            rectangle = new Rectangle(60, 80, Brushes.Blue, Pens.Black);
+            triangle = new Triangle(100, Brushes.Green, Pens.Black);
+
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -59,11 +55,11 @@ namespace GraphicPrimitives
         protected int Height { get; set; }
 
         public abstract void Draw(Graphics graphics);
+        public abstract bool ContainsPoint(Point point);
     }
 
     class Circle : Shape
     {
-
         private int Radius { get; set; }
         public Circle(int width, int height, int radius, Brush fillColor, Pen borderColor)
         {
@@ -73,10 +69,17 @@ namespace GraphicPrimitives
             FillColor = fillColor;
             BorderColor = borderColor;
         }
+
         public override void Draw(Graphics graphics)
         {
             graphics.FillEllipse(FillColor, 100, 100, Radius * 2, Radius * 2);
             graphics.DrawEllipse(BorderColor, 100, 100, Radius * 2, Radius * 2);
+        }
+
+        public override bool ContainsPoint(Point point)
+        {
+            int distanceFromCenter = (int)Math.Sqrt(Math.Pow(point.X - Radius, 2) + Math.Pow(point.Y - Radius, 2));
+            return distanceFromCenter <= Radius;
         }
     }
 
@@ -95,16 +98,19 @@ namespace GraphicPrimitives
             graphics.FillRectangle(FillColor, 250, 200, Width, Height);
             graphics.DrawRectangle(BorderColor, 250, 200, Width, Height);
         }
+
+        public override bool ContainsPoint(Point point)
+        {
+            return point.X >= 0 && point.X <= Width && point.Y >= 0 && point.Y <= Height;
+        }
     }
 
     class Triangle : Shape
     {
         private int SideLength { get; set; }
-        private int Angle { get; set; }
-        public Triangle(int sideLength, int angle, Brush fillColor, Pen borderColor)
+        public Triangle(int sideLength, Brush fillColor, Pen borderColor)
         {
             SideLength = sideLength;
-            Angle = angle;
             FillColor = fillColor;
             BorderColor = borderColor;
         }
@@ -114,6 +120,17 @@ namespace GraphicPrimitives
             Point[] points = CalculateTrianglePoints();
             graphics.FillPolygon(FillColor, points);
             graphics.DrawPolygon(BorderColor, points);
+        }
+
+        public override bool ContainsPoint(Point point)
+        {
+            Point[] points = CalculateTrianglePoints();
+
+            using (GraphicsPath path = new GraphicsPath())
+            {
+                path.AddPolygon(points);
+                return path.IsVisible(point);
+            }
         }
 
         private Point[] CalculateTrianglePoints()
