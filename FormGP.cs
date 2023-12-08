@@ -27,9 +27,9 @@ namespace GraphicPrimitives
         private Shape selectedShape;
         private Point lastMouseLocation;
 
-        private Circle circle;
-        private Rectangle rectangle;
-        private Triangle triangle;
+        //private Circle circle;
+        //private Rectangle rectangle;
+        //private Triangle triangle;
 
         //штучка на попозже
         private bool isResizing;
@@ -38,16 +38,23 @@ namespace GraphicPrimitives
 
         public DrawingCanvas()
         {
-            shapes = new List<Shape> 
+            shapes = new List<Shape>
             {
                 new Circle(10, 10, 100, 100, 50, Brushes.Red, Pens.Black),
                 new Rectangle(60, 60, 60, 80, Brushes.Blue, Pens.Black),
                 new Triangle(200, 200, 100, Brushes.Green, Pens.Black)
             };
-            
+
+
             MouseDown += DrawingCanvas_MouseDown;
             MouseMove += DrawingCanvas_MouseMove;
             MouseUp += DrawingCanvas_MouseUp;
+        }
+
+        private void Shape_OnShapeClicked(object sender, EventArgs e)
+        {
+            selectedShape = (Shape)sender;
+            lastMouseLocation = Cursor.Position;
         }
 
         private void DrawingCanvas_MouseDown(object sender, MouseEventArgs e)
@@ -57,6 +64,7 @@ namespace GraphicPrimitives
                 if (shape.ContainsPoint(e.Location))
                 {
                     selectedShape = shape;
+                    isResizing = true;
                     Capture = true;
                     lastMouseLocation = e.Location;
                     return; // Выходим, чтобы не проверять другие фигуры после того, как одна была найдена
@@ -71,11 +79,34 @@ namespace GraphicPrimitives
                 int deltaX = e.X - lastMouseLocation.X;
                 int deltaY = e.Y - lastMouseLocation.Y;
 
-                selectedShape.Move(deltaX, deltaY);
+                if (isResizing)
+                {
+                    if (selectedShape is Circle circle)
+                    {
+                        int newRadius = Math.Max(circle.Radius + deltaX, 0);
+                        circle.Resize(newRadius);
+                    }
+
+                    else if (selectedShape is Rectangle rectangle)
+                    {
+                        int newWidth = Math.Max(rectangle.Width + deltaX, 0);
+                        int newHeight = Math.Max(rectangle.Height + deltaY, 0);
+                        rectangle.Resize(newWidth, newHeight);
+                    }
+
+                    Invalidate(); // Перерисовываем контрол после перемещения
+                }
+                else
+                {
+                    // Перемещение
+                    selectedShape.Move(deltaX, deltaY);
+                    Invalidate();
+                }
 
                 lastMouseLocation = e.Location;
-                Invalidate(); // Перерисовываем контрол после перемещения
+
             }
+            
         }
 
         private void DrawingCanvas_MouseUp(object sender, MouseEventArgs e)
@@ -83,6 +114,7 @@ namespace GraphicPrimitives
             // Освобождаем захват мыши
             Capture = false;
             selectedShape = null;
+            isResizing = false;
         }
 
 
@@ -109,8 +141,8 @@ namespace GraphicPrimitives
         protected Pen BorderColor { get; set; }
 
         //вот это я зачем сделала?? 
-        protected int Width { get; set; }
-        protected int Height { get; set; }
+        public int Width { get; set; }
+        public int Height { get; set; }
 
         public abstract void Draw(Graphics graphics);
         public abstract bool ContainsPoint(Point point);
@@ -120,7 +152,7 @@ namespace GraphicPrimitives
 
     class Circle : Shape
     {
-        private int Radius { get; set; }
+        public int Radius { get; set; }
         private Point Location { get; set; }
 
         public Circle(int x, int y, int width, int height, int radius, Brush fillColor, Pen borderColor)
@@ -150,6 +182,11 @@ namespace GraphicPrimitives
         {
             Location = new Point(Location.X + deltaX, Location.Y + deltaY);
         }
+
+        public void Resize(int newRadius)
+        {
+            Radius = newRadius;
+        }
     }
 
     class Rectangle : Shape
@@ -178,8 +215,13 @@ namespace GraphicPrimitives
         public override void Move(int deltaX, int deltaY)
         {
             Location = new Point(Location.X + deltaX, Location.Y + deltaY);
-
         }
+        public void Resize(int newWidth, int newHeight)
+        {
+            Width = newWidth;
+            Height = newHeight;
+        }
+
     }
 
     class Triangle : Shape
