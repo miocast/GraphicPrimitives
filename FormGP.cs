@@ -12,22 +12,39 @@ namespace GraphicPrimitives
 {
     public partial class FormGP : Form
     {
-        private Circle circle;
-        private Rectangle rectangle;
-        private Triangle triangle;
+        private DrawingCanvas drawingCanvas;
 
         public FormGP()
         {
             InitializeComponent();
+
+            drawingCanvas = new DrawingCanvas();
+            drawingCanvas.Dock = DockStyle.Fill;
+            Controls.Add(drawingCanvas);
+        }
+
+    }
+
+    public class DrawingCanvas : Control
+    {
+
+        private Circle circle;
+        private Rectangle rectangle;
+        private Triangle triangle;
+
+        public DrawingCanvas()
+        {
             circle = new Circle(100, 100, 50, Brushes.Red, Pens.Black);
             rectangle = new Rectangle(250, 200, Brushes.Blue, Pens.Black);
             triangle = new Triangle(100, 30, Brushes.Green, Pens.Black);
-
-            this.Paint += FormGP_Paint;
         }
 
-        private void FormGP_Paint(object sender, PaintEventArgs e)
+        protected override void OnPaint(PaintEventArgs e)
         {
+            base.OnPaint(e);
+
+            e.Graphics.Clear(Color.White);
+
             circle.Draw(e.Graphics);
             rectangle.Draw(e.Graphics);
             triangle.Draw(e.Graphics);
