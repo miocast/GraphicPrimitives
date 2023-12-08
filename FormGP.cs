@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Reflection;
@@ -22,19 +23,28 @@ namespace GraphicPrimitives
 
     public class DrawingCanvas : Control
     {
+        private List<Shape> shapes;
+        private Shape selectedShape;
+        private Point lastMouseLocation;
 
         private Circle circle;
         private Rectangle rectangle;
         private Triangle triangle;
 
-        private Point lastMouseLocation;
+        //штучка на попозже
+        private bool isResizing;
+
+
 
         public DrawingCanvas()
         {
-            circle = new Circle(10, 10, 100, 100, 50, Brushes.Red, Pens.Black);
-            rectangle = new Rectangle(60, 60, 60, 80, Brushes.Blue, Pens.Black);
-            triangle = new Triangle(200, 200, 100, Brushes.Green, Pens.Black);
-
+            shapes = new List<Shape> 
+            {
+                new Circle(10, 10, 100, 100, 50, Brushes.Red, Pens.Black),
+                new Rectangle(60, 60, 60, 80, Brushes.Blue, Pens.Black),
+                new Triangle(200, 200, 100, Brushes.Green, Pens.Black)
+            };
+            
             MouseDown += DrawingCanvas_MouseDown;
             MouseMove += DrawingCanvas_MouseMove;
             MouseUp += DrawingCanvas_MouseUp;
@@ -42,25 +52,26 @@ namespace GraphicPrimitives
 
         private void DrawingCanvas_MouseDown(object sender, MouseEventArgs e)
         {
-            lastMouseLocation = e.Location;
-
-            if (circle.ContainsPoint(e.Location) || rectangle.ContainsPoint(e.Location) || triangle.ContainsPoint(e.Location))
+            foreach (Shape shape in shapes)
             {
-                // Перехватываем событие мыши, когда оно происходит над фигурой
-                Capture = true;
+                if (shape.ContainsPoint(e.Location))
+                {
+                    selectedShape = shape;
+                    Capture = true;
+                    lastMouseLocation = e.Location;
+                    return; // Выходим, чтобы не проверять другие фигуры после того, как одна была найдена
+                }
             }
         }
 
         private void DrawingCanvas_MouseMove(object sender, MouseEventArgs e)
         {
-            if (Capture)
+            if (Capture && selectedShape != null)
             {
                 int deltaX = e.X - lastMouseLocation.X;
                 int deltaY = e.Y - lastMouseLocation.Y;
 
-                circle.Move(deltaX, deltaY);
-                rectangle.Move(deltaX, deltaY);
-                triangle.Move(deltaX, deltaY);
+                selectedShape.Move(deltaX, deltaY);
 
                 lastMouseLocation = e.Location;
                 Invalidate(); // Перерисовываем контрол после перемещения
@@ -71,6 +82,7 @@ namespace GraphicPrimitives
         {
             // Освобождаем захват мыши
             Capture = false;
+            selectedShape = null;
         }
 
 
@@ -81,9 +93,10 @@ namespace GraphicPrimitives
 
             e.Graphics.Clear(Color.White);
 
-            circle.Draw(e.Graphics);
-            rectangle.Draw(e.Graphics);
-            triangle.Draw(e.Graphics);
+            foreach (Shape shape in shapes)
+            {
+                shape.Draw(e.Graphics);
+            }
         }
     }
 
