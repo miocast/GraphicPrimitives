@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Drawing.Drawing2D;
+using System.Reflection;
 using System.Windows.Forms;
 
 namespace GraphicPrimitives
@@ -25,15 +26,54 @@ namespace GraphicPrimitives
         private Circle circle;
         private Rectangle rectangle;
         private Triangle triangle;
- 
+
+        private Point lastMouseLocation;
 
         public DrawingCanvas()
         {
-            circle = new Circle(100, 100, 50, Brushes.Red, Pens.Black);
-            rectangle = new Rectangle(60, 80, Brushes.Blue, Pens.Black);
-            triangle = new Triangle(100, Brushes.Green, Pens.Black);
+            circle = new Circle(10, 10, 100, 100, 50, Brushes.Red, Pens.Black);
+            rectangle = new Rectangle(60, 60, 60, 80, Brushes.Blue, Pens.Black);
+            triangle = new Triangle(200, 200, 100, Brushes.Green, Pens.Black);
 
+            MouseDown += DrawingCanvas_MouseDown;
+            MouseMove += DrawingCanvas_MouseMove;
+            MouseUp += DrawingCanvas_MouseUp;
         }
+
+        private void DrawingCanvas_MouseDown(object sender, MouseEventArgs e)
+        {
+            lastMouseLocation = e.Location;
+
+            if (circle.ContainsPoint(e.Location) || rectangle.ContainsPoint(e.Location) || triangle.ContainsPoint(e.Location))
+            {
+                // Перехватываем событие мыши, когда оно происходит над фигурой
+                Capture = true;
+            }
+        }
+
+        private void DrawingCanvas_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (Capture)
+            {
+                int deltaX = e.X - lastMouseLocation.X;
+                int deltaY = e.Y - lastMouseLocation.Y;
+
+                circle.Move(deltaX, deltaY);
+                rectangle.Move(deltaX, deltaY);
+                triangle.Move(deltaX, deltaY);
+
+                lastMouseLocation = e.Location;
+                Invalidate(); // Перерисовываем контрол после перемещения
+            }
+        }
+
+        private void DrawingCanvas_MouseUp(object sender, MouseEventArgs e)
+        {
+            // Освобождаем захват мыши
+            Capture = false;
+        }
+
+
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -47,22 +87,32 @@ namespace GraphicPrimitives
         }
     }
 
+
+
+
     abstract class Shape
     {
         protected Brush FillColor { get; set; }
         protected Pen BorderColor { get; set; }
+
+        //вот это я зачем сделала?? 
         protected int Width { get; set; }
         protected int Height { get; set; }
 
         public abstract void Draw(Graphics graphics);
         public abstract bool ContainsPoint(Point point);
+
+        public abstract void Move(int deltaX, int deltaY);
     }
 
     class Circle : Shape
     {
         private int Radius { get; set; }
-        public Circle(int width, int height, int radius, Brush fillColor, Pen borderColor)
+        private Point Location { get; set; }
+
+        public Circle(int x, int y, int width, int height, int radius, Brush fillColor, Pen borderColor)
         {
+            Location = new Point(x, y);
             Width = width;
             Height = height;
             Radius = radius;
@@ -72,21 +122,29 @@ namespace GraphicPrimitives
 
         public override void Draw(Graphics graphics)
         {
-            graphics.FillEllipse(FillColor, 100, 100, Radius * 2, Radius * 2);
-            graphics.DrawEllipse(BorderColor, 100, 100, Radius * 2, Radius * 2);
+            graphics.FillEllipse(FillColor, Location.X - Radius, Location.Y - Radius, Radius * 2, Radius * 2);
+            graphics.DrawEllipse(BorderColor, Location.X - Radius, Location.Y - Radius, Radius * 2, Radius * 2);
+
         }
 
         public override bool ContainsPoint(Point point)
         {
-            int distanceFromCenter = (int)Math.Sqrt(Math.Pow(point.X - Radius, 2) + Math.Pow(point.Y - Radius, 2));
+            int distanceFromCenter = (int)Math.Sqrt(Math.Pow(point.X - Location.X, 2) + Math.Pow(point.Y - Location.Y, 2));
             return distanceFromCenter <= Radius;
+        }
+
+        public override void Move(int deltaX, int deltaY)
+        {
+            Location = new Point(Location.X + deltaX, Location.Y + deltaY);
         }
     }
 
     class Rectangle : Shape
     {
-        public Rectangle(int width, int height, Brush fillColor, Pen borderColor)
+        private Point Location { get; set; }
+        public Rectangle(int x, int y, int width, int height, Brush fillColor, Pen borderColor)
         {
+            Location = new Point(x, y);
             Width = width;
             Height = height;
             FillColor = fillColor;
@@ -95,54 +153,66 @@ namespace GraphicPrimitives
 
         public override void Draw(Graphics graphics)
         {
-            graphics.FillRectangle(FillColor, 250, 200, Width, Height);
-            graphics.DrawRectangle(BorderColor, 250, 200, Width, Height);
+            graphics.FillRectangle(FillColor, Location.X, Location.Y, Width, Height);
+            graphics.DrawRectangle(BorderColor, Location.X, Location.Y, Width, Height);
         }
 
         public override bool ContainsPoint(Point point)
         {
-            return point.X >= 0 && point.X <= Width && point.Y >= 0 && point.Y <= Height;
+            return point.X >= Location.X && point.X <= Location.X + Width && point.Y >= Location.Y && point.Y <= Location.Y + Height;
+        }
+
+        public override void Move(int deltaX, int deltaY)
+        {
+            Location = new Point(Location.X + deltaX, Location.Y + deltaY);
+
         }
     }
 
     class Triangle : Shape
     {
+        private Point[] Points { get; set; }
         private int SideLength { get; set; }
-        public Triangle(int sideLength, Brush fillColor, Pen borderColor)
+
+        public Triangle(int x, int y, int sideLength, Brush fillColor, Pen borderColor)
         {
             SideLength = sideLength;
             FillColor = fillColor;
             BorderColor = borderColor;
+            CalculateTrianglePoints(x, y);
+        }
+
+        private void CalculateTrianglePoints(int x, int y)
+        {
+            Points = new Point[3];
+            int halfSideLength = SideLength / 2;
+
+            Points[0] = new Point(x, y);
+            Points[1] = new Point(x + SideLength, y);
+            Points[2] = new Point(x + halfSideLength, y + (int)(Math.Sqrt(3) * halfSideLength));
         }
 
         public override void Draw(Graphics graphics)
         {
-            Point[] points = CalculateTrianglePoints();
-            graphics.FillPolygon(FillColor, points);
-            graphics.DrawPolygon(BorderColor, points);
+            graphics.FillPolygon(FillColor, Points);
+            graphics.DrawPolygon(BorderColor, Points);
         }
 
         public override bool ContainsPoint(Point point)
         {
-            Point[] points = CalculateTrianglePoints();
-
             using (GraphicsPath path = new GraphicsPath())
             {
-                path.AddPolygon(points);
+                path.AddPolygon(Points);
                 return path.IsVisible(point);
             }
         }
 
-        private Point[] CalculateTrianglePoints()
+        public override void Move(int deltaX, int deltaY)
         {
-            Point[] points = new Point[3];
-            int halfSideLength = SideLength / 2;
-
-            points[0] = new Point(0, 0);
-            points[1] = new Point(SideLength, 0);
-            points[2] = new Point(halfSideLength, (int)(Math.Sqrt(3) * halfSideLength));
-
-            return points;
+            for (int i = 0; i < Points.Length; i++)
+            {
+                Points[i] = new Point(Points[i].X + deltaX, Points[i].Y + deltaY);
+            }
         }
     }
 }
