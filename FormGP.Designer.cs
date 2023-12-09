@@ -29,22 +29,39 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormGP));
+            this.buttonClearLines = new System.Windows.Forms.Button();
             this.SuspendLayout();
+            // 
+            // buttonClearLines
+            // 
+            this.buttonClearLines.Location = new System.Drawing.Point(670, 42);
+            this.buttonClearLines.Name = "buttonClearLines";
+            this.buttonClearLines.Size = new System.Drawing.Size(185, 52);
+            this.buttonClearLines.TabIndex = 0;
+            this.buttonClearLines.Text = "Очистить связи";
+            this.buttonClearLines.UseVisualStyleBackColor = true;
+            this.buttonClearLines.Click += new System.EventHandler(this.buttonClearLines_Click_1);
             // 
             // FormGP
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.BackColor = System.Drawing.SystemColors.InactiveCaption;
+            this.ClientSize = new System.Drawing.Size(882, 503);
+            this.Controls.Add(this.buttonClearLines);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MaximumSize = new System.Drawing.Size(900, 550);
+            this.MinimumSize = new System.Drawing.Size(900, 550);
             this.Name = "FormGP";
+            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Графические примитивы";
-            this.Paint += new System.Windows.Forms.PaintEventHandler(this.FormGP_Paint);
             this.ResumeLayout(false);
 
         }
 
         #endregion
+
+        private System.Windows.Forms.Button buttonClearLines;
     }
 }
 
