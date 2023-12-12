@@ -40,7 +40,7 @@
             this.buttonClearLines.TabIndex = 0;
             this.buttonClearLines.Text = "Очистить связи";
             this.buttonClearLines.UseVisualStyleBackColor = true;
-            this.buttonClearLines.Click += new System.EventHandler(this.buttonClearLines_Click_1);
+            this.buttonClearLines.Click += new System.EventHandler(this.buttonClearLines_Click);
             // 
             // FormGP
             // 

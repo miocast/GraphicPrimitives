@@ -20,7 +20,7 @@ namespace GraphicPrimitives
         }
 
         // Кнопка удаления соединений примитивов линиями
-        private void buttonClearLines_Click_1(object sender, EventArgs e)
+        private void buttonClearLines_Click(object sender, EventArgs e)
         {
             drawingCanvas.ClearLines(); // Удаление линий
             drawingCanvas.Invalidate(); // Перерисовка холста
@@ -40,7 +40,7 @@ namespace GraphicPrimitives
         private bool isResizing; // Флаг изменения размера примитива
         private bool isMoving; // Флаг перемещения примитива
 
-        // Экземпляр класса холста
+        // Конструктор класса холста
         public DrawingCanvas()
         {
             lines = new List<Line>(); // Инициализация списка линий
@@ -59,13 +59,6 @@ namespace GraphicPrimitives
             MouseUp += DrawingCanvas_MouseUp;
         }
 
-        // Обработчик события нажатия на примитив
-        private void Shape_OnShapeClicked(object sender, EventArgs e)
-        {
-            selectedShape = (Shape)sender; // Установка выбранной фигуры
-            lastMouseLocation = Cursor.Position; // Текущее положение мыши
-        }
-
         // Обработчик нажатия кнопки мыши
         private void DrawingCanvas_MouseDown(object sender, MouseEventArgs e)
         {
@@ -81,7 +74,6 @@ namespace GraphicPrimitives
                 if (shape.ContainsPoint(e.Location))
                 {
                     selectedShape = shape; // Установка выбранной фигуры
-                    Capture = true; // Захват фокуса на примитиве
                     lastMouseLocation = e.Location; // Текущее положение мыши
 
                     // Проверка для определения начала изменения размера
@@ -103,7 +95,7 @@ namespace GraphicPrimitives
         private void DrawingCanvas_MouseMove(object sender, MouseEventArgs e)
         {
             // Перемещение и изменение размера выбранного примитива
-            if (Capture && selectedShape != null)
+            if (selectedShape != null)
             {
                 int deltaX = e.X - lastMouseLocation.X;
                 int deltaY = e.Y - lastMouseLocation.Y;
@@ -165,7 +157,6 @@ namespace GraphicPrimitives
             }
 
             // Освобождение захвата мыши
-            Capture = false; // Снятие фокуса
             selectedShape = null; // Обнуляем выбранный примитив
             isResizing = false; // Сброс флага изменения размера
             isMoving = false; // Сброс флага перемещения
@@ -187,7 +178,6 @@ namespace GraphicPrimitives
             {
                 line.Draw(e.Graphics); // Отрисовка всех линий из списка
             }
-
         }
 
         // Метод для очистки списка линий
